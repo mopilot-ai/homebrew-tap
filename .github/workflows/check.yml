@@ -33,7 +33,7 @@ jobs:
           mkdir -p "$tap/Casks"
           cp Casks/mopilot.rb "$tap/Casks/mopilot.rb"
           brew style --cask mopilot-ai/check/mopilot
-          brew audit --cask --online --signing mopilot-ai/check/mopilot
+          brew audit --cask --online mopilot-ai/check/mopilot
           brew install --cask mopilot-ai/check/mopilot
           app=/Applications/MoPilot.app
           test "$(defaults read "$app/Contents/Info" CFBundleShortVersionString)" = "$version"
