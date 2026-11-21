@@ -8,7 +8,7 @@ on:
     branches: [main]
     paths: ['Casks/**', '.github/workflows/check.yml']
   workflow_dispatch:
-# The audit skips its livecheck comparison: livecheck reads the feed through raw.githubusercontent.com, whose cache can lag.
+# The audit skips its livecheck version comparisons (the HTTPS-availability audit runs one too): livecheck reads the feed through raw.githubusercontent.com, whose cache can lag.
 permissions: { contents: read }
 concurrency: { group: 'check-cask-${{ github.ref }}', cancel-in-progress: true }
 env:
@@ -44,12 +44,12 @@ jobs:
             # Homebrew loads a third-party tap's casks only once trusted; installing by full name trusts it
             if brew help trust >/dev/null 2>&1; then brew trust mopilot-ai/check; fi
             brew style --cask "$cask"
-            brew audit --cask --online --except=livecheck_version "$cask"
+            brew audit --cask --online --except=livecheck_version,livecheck_https_availability "$cask"
             brew install --cask "$cask"
           else
             cask=mopilot-ai/tap/mopilot
             brew install --cask "$cask"
-            brew audit --cask --online --except=livecheck_version "$cask"
+            brew audit --cask --online --except=livecheck_version,livecheck_https_availability "$cask"
           fi
           app=/Applications/MoPilot.app
           test "$(defaults read "$app/Contents/Info" CFBundleShortVersionString)" = "$version"
