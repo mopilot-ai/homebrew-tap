@@ -30,7 +30,8 @@ jobs:
       - uses: actions/checkout@v4
         with: { persist-credentials: false }
       - name: Install the cask, check the app, and remove it
-        env: { ARCH: '${{ matrix.arch }}', EVENT: '${{ github.event_name }}' }
+        # the run's read-only token: the online audit reads GitHub's API, whose anonymous limit a shared runner address exhausts
+        env: { ARCH: '${{ matrix.arch }}', EVENT: '${{ github.event_name }}', HOMEBREW_GITHUB_API_TOKEN: '${{ github.token }}' }
         run: |
           set -euxo pipefail
           if [ ! -f Casks/mopilot.rb ]; then echo "No cask yet"; exit 0; fi
