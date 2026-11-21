@@ -32,6 +32,7 @@ jobs:
         env: { ARCH: '${{ matrix.arch }}', EVENT: '${{ github.event_name }}' }
         run: |
           set -euxo pipefail
+          if [ ! -f Casks/mopilot.rb ]; then echo "No cask yet"; exit 0; fi
           version="$(sed -n 's/^  version "\(.*\)"$/\1/p' Casks/mopilot.rb)"
           if [ "$EVENT" = pull_request ]; then
             cask=mopilot-ai/check/mopilot
