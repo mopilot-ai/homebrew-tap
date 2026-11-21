@@ -1,8 +1,12 @@
 name: Check cask
-# Installs a proposed Casks/mopilot.rb from a local tap on Apple silicon and on Intel, checks the app, and removes it.
-# The release workflow that writes the cask runs the same checks before it pushes (mopilot-code-release homebrew-tap.yml).
+# A pull request: installs its Casks/mopilot.rb from a local tap on Apple silicon and on Intel, checks the app, and removes
+# it (MoPilot's release workflow runs the same checks before it pushes a cask: mopilot-code-release homebrew-tap.yml).
+# A push to main: runs what users run, `brew install --cask mopilot-ai/tap/mopilot` from this tap on GitHub, with the same checks.
 on:
   pull_request:
+  push:
+    branches: [main]
+    paths: ['Casks/**', '.github/workflows/check.yml']
   workflow_dispatch:
 permissions: { contents: read }
 concurrency: { group: 'check-cask-${{ github.ref }}', cancel-in-progress: true }
@@ -15,6 +19,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     strategy:
+      fail-fast: false
       max-parallel: 1
       matrix:
         include:
@@ -23,22 +28,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { persist-credentials: false }
-      - name: Install the cask from a local tap, check the app, and remove it
-        env: { ARCH: '${{ matrix.arch }}' }
+      - name: Install the cask, check the app, and remove it
+        env: { ARCH: '${{ matrix.arch }}', EVENT: '${{ github.event_name }}' }
         run: |
           set -euxo pipefail
           version="$(sed -n 's/^  version "\(.*\)"$/\1/p' Casks/mopilot.rb)"
-          brew tap-new --no-git mopilot-ai/check
-          tap="$(brew --repository mopilot-ai/check)"
-          mkdir -p "$tap/Casks"
-          cp Casks/mopilot.rb "$tap/Casks/mopilot.rb"
-          brew style --cask mopilot-ai/check/mopilot
-          brew audit --cask --online mopilot-ai/check/mopilot
-          brew install --cask mopilot-ai/check/mopilot
+          if [ "$EVENT" = pull_request ]; then
+            cask=mopilot-ai/check/mopilot
+            brew tap-new --no-git mopilot-ai/check
+            tap="$(brew --repository mopilot-ai/check)"
+            mkdir -p "$tap/Casks"
+            cp Casks/mopilot.rb "$tap/Casks/mopilot.rb"
+            # Homebrew loads a third-party tap's casks only once trusted; installing by full name trusts it
+            brew trust mopilot-ai/check
+            brew style --cask "$cask"
+            brew audit --cask --online "$cask"
+            brew install --cask "$cask"
+          else
+            cask=mopilot-ai/tap/mopilot
+            brew install --cask "$cask"
+            brew audit --cask --online "$cask"
+          fi
           app=/Applications/MoPilot.app
           test "$(defaults read "$app/Contents/Info" CFBundleShortVersionString)" = "$version"
           lipo -archs "$app/Contents/MacOS/MoPilot" | grep -qw "$ARCH"
           codesign --verify --deep --strict "$app"
           spctl --assess --type execute --verbose "$app"
-          brew uninstall --cask --zap mopilot-ai/check/mopilot
+          brew uninstall --cask --zap "$cask"
           test ! -e "$app"
