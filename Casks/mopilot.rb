@@ -12,15 +12,17 @@ cask "mopilot" do
   desc "Desktop home for coding agents"
   homepage "https://mopilot.ai/"
 
-  # The newest version at 100% rollout, which is what mopilot.ai/download serves.
+  # The newest version at 100% rollout on both architectures, as this cask is written from the feed.
   livecheck do
     url "https://raw.githubusercontent.com/mopilot-ai/mopilot-code-release/main/updates/stable.json"
     strategy :json do |json|
-      (json["releases"].to_a + json["promotions"].to_a).filter_map do |item|
-        next if item["platform"] != "darwin" || item["rolloutPct"] != 100
-
-        item["version"] if item["version"].to_s.match?(/^\d+\.\d+\.\d+$/)
+      live = (json["releases"].to_a + json["promotions"].to_a).select do |item|
+        item.is_a?(Hash) && item["platform"] == "darwin" && item["rolloutPct"] == 100 &&
+          item["version"].to_s.match?(/^\d+\.\d+\.\d+$/)
       end
+      live.group_by { |item| item["version"] }
+          .select { |_, items| (["arm64", "x64"] - items.map { |item| item["arch"] }).empty? }
+          .keys
     end
   end
 
@@ -30,8 +32,8 @@ cask "mopilot" do
 
   app "MoPilot.app"
 
+  # ~/.mopilot is left alone: it holds the user's agent worktrees, plugins and connectors.
   zap trash: [
-    "~/.mopilot",
     "~/Library/Application Support/MoPilot",
     "~/Library/Caches/ai.mopilot.code",
     "~/Library/Caches/ai.mopilot.code.ShipIt",
