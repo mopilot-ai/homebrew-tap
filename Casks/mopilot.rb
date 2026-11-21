@@ -21,7 +21,7 @@ cask "mopilot" do
           item["version"].to_s.match?(/^\d+\.\d+\.\d+$/)
       end
       live.group_by { |item| item["version"] }
-          .select { |_, items| (["arm64", "x64"] - items.map { |item| item["arch"] }).empty? }
+          .select { |_, items| items.any? { |i| i["arch"] == "arm64" } && items.any? { |i| i["arch"] == "x64" } }
           .keys
     end
   end
