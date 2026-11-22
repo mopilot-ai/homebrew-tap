@@ -2,9 +2,9 @@
 cask "mopilot" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.4.45"
-  sha256 arm:   "2793ae25d320a11a4ef806dee08a094efa6aa1e50cafde18ed9c1b45093690ba",
-         intel: "4108a1ba063ac4a9b6867ccd83466f136e78c3b9cd0091a0c458e78cc09bcafd"
+  version "0.4.49"
+  sha256 arm:   "d83e49a0d0c4a8ccd6e7db886e23c2f70e5e2335dc3f1b53fe86cb2c97ddb2a8",
+         intel: "700624a953a9f5e03d5706d7dfed0f0802c144031f3718884d81d1a8b7d0abe3"
 
   url "https://github.com/mopilot-ai/mopilot-code-release/releases/download/v#{version}/MoPilot-#{version}-#{arch}.zip",
       verified: "github.com/mopilot-ai/mopilot-code-release/"
